@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Reincidencia en Infracciones Administrativas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .custom-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .gradient-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        .gradient-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        .input-focus:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+    <div class="max-w-4xl w-full bg-white p-8 rounded-2xl custom-shadow">
+        <h1 class="text-4xl font-bold mb-8 text-center text-indigo-600">Calculadora de Reincidencia</h1>
+        <form id="infraccionForm" class="space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Primera Infracción -->
+                <div class="bg-indigo-50 p-6 rounded-xl space-y-4">
+                    <h2 class="text-2xl font-semibold text-indigo-700">Primera Infracción</h2>
+                    <div>
+                        <label class="block text-sm font-medium text-indigo-600 mb-1">Fecha</label>
+                        <input type="date" id="fecha1" required class="w-full px-3 py-2 bg-white border border-indigo-300 rounded-md shadow-sm input-focus">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-indigo-600 mb-1">Calificación</label>
+                        <select id="calificacion1" required class="w-full px-3 py-2 bg-white border border-indigo-300 rounded-md shadow-sm input-focus">
+                            <option value="">Seleccione...</option>
+                            <option value="leve">Leve</option>
+                            <option value="grave">Grave</option>
+                            <option value="muy_grave">Muy grave</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-indigo-600 mb-1">Importe (€)</label>
+                        <input type="number" id="importe1" required min="45" max="983736" class="w-full px-3 py-2 bg-white border border-indigo-300 rounded-md shadow-sm input-focus">
+                    </div>
+                </div>
+                
+                <!-- Segunda Infracción -->
+                <div class="bg-purple-50 p-6 rounded-xl space-y-4">
+                    <h2 class="text-2xl font-semibold text-purple-700">Segunda Infracción</h2>
+                    <div>
+                        <label class="block text-sm font-medium text-purple-600 mb-1">Fecha</label>
+                        <input type="date" id="fecha2" required class="w-full px-3 py-2 bg-white border border-purple-300 rounded-md shadow-sm input-focus">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-purple-600 mb-1">Calificación</label>
+                        <select id="calificacion2" required class="w-full px-3 py-2 bg-white border border-purple-300 rounded-md shadow-sm input-focus">
+                            <option value="">Seleccione...</option>
+                            <option value="leve">Leve</option>
+                            <option value="grave">Grave</option>
+                            <option value="muy_grave">Muy grave</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-purple-600 mb-1">Importe (€)</label>
+                        <input type="number" id="importe2" required min="45" max="983736" class="w-full px-3 py-2 bg-white border border-purple-300 rounded-md shadow-sm input-focus">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-center">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="persistencia" class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300">
+                    <span class="text-gray-700">¿Es una infracción con persistencia continuada?</span>
+                </label>
+            </div>
+            
+            <button type="submit" class="w-full gradient-button text-white py-3 px-6 rounded-md text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Calcular Reincidencia
+            </button>
+        </form>
+        
+        <div id="resultado" class="mt-8 p-6 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-indigo-700">Resultado:</h2>
+            <p id="resultadoTexto" class="text-gray-800 text-lg"></p>
+        </div>
+    </div>
+
+    <script>
+        function validarImporte(calificacion, importe) {
+            const limites = {
+                'leve': { min: 45, max: 2450 },
+                'grave': { min: 2451, max: 49180 },
+                'muy_grave': { min: 49181, max: 983736 }
+            };
+            return importe >= limites[calificacion].min && importe <= limites[calificacion].max;
+        }
+
+        document.getElementById('infraccionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fecha1 = new Date(document.getElementById('fecha1').value);
+            const fecha2 = new Date(document.getElementById('fecha2').value);
+            const calificacion1 = document.getElementById('calificacion1').value;
+            const calificacion2 = document.getElementById('calificacion2').value;
+            const importe1 = parseFloat(document.getElementById('importe1').value);
+            const importe2 = parseFloat(document.getElementById('importe2').value);
+            const persistencia = document.getElementById('persistencia').checked;
+            
+            if (!validarImporte(calificacion1, importe1) || !validarImporte(calificacion2, importe2)) {
+                alert('El importe no corresponde con la calificación seleccionada.');
+                return;
+            }
+            
+            const diferenciaEnDias = (fecha2 - fecha1) / (1000 * 60 * 60 * 24);
+            const mismoTipoYCalificacion = calificacion1 === calificacion2;
+            const hayReincidencia = diferenciaEnDias < 365 && mismoTipoYCalificacion && !persistencia;
+            
+            let resultado = '';
+            let nuevoImporte = importe2;
+            
+            if (persistencia) {
+                resultado = "No se considera reincidencia debido a la persistencia continuada. ";
+                nuevoImporte = getMaximoCalificacion(calificacion2);
+                resultado += `La sanción se aplica en el máximo de la calificación: ${nuevoImporte} euros.`;
+            } else if (hayReincidencia) {
+                nuevoImporte = Math.min(importe2 * 2, getMaximoCalificacion(calificacion2));
+                resultado = `Hay reincidencia. El nuevo importe de la sanción es de ${nuevoImporte} euros.`;
+            } else {
+                resultado = `No hay reincidencia. `;
+                if (diferenciaEnDias >= 365) {
+                    resultado += "Han pasado más de 365 días entre las infracciones. ";
+                }
+                if (!mismoTipoYCalificacion) {
+                    resultado += "Las infracciones no son del mismo tipo y calificación. ";
+                }
+                resultado += `El importe de la sanción se mantiene en ${importe2} euros.`;
+            }
+            
+            document.getElementById('resultadoTexto').textContent = resultado;
+            document.getElementById('resultado').classList.remove('hidden');
+        });
+        
+        function getMaximoCalificacion(calificacion) {
+            switch (calificacion) {
+                case 'leve': return 2450;
+                case 'grave': return 49180;
+                case 'muy_grave': return 983736;
+                default: return 0;
+            }
+        }
+        
+        // Validación dinámica del importe según la calificación
+        ['calificacion1', 'calificacion2'].forEach(id => {
+            document.getElementById(id).addEventListener('change', function() {
+                const importeInput = document.getElementById(id === 'calificacion1' ? 'importe1' : 'importe2');
+                switch (this.value) {
+                    case 'leve':
+                        importeInput.min = 45;
+                        importeInput.max = 2450;
+                        break;
+                    case 'grave':
+                        importeInput.min = 2451;
+                        importeInput.max = 49180;
+                        break;
+                    case 'muy_grave':
+                        importeInput.min = 49181;
+                        importeInput.max = 983736;
+                        break;
+                    default:
+                        importeInput.min = 45;
+                        importeInput.max = 983736;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
